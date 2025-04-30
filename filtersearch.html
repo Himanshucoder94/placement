@@ -45,6 +45,7 @@
     #filters label {
       display: block;
       margin-bottom: 5px;
+      font-size: 14px;
     }
 
     table {
@@ -108,13 +109,13 @@
       headers = rows[0];
       allData = rows.slice(1);
 
-      document.getElementById("tableHeader").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+      document.getElementById("tableHeader").innerHTML =
+        "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
 
       buildFilters(allData);
       applyCombinedFilters();
 
       document.getElementById("searchBox").addEventListener("input", applyCombinedFilters);
-
     } catch (err) {
       console.error("Error fetching data", err);
     }
@@ -126,7 +127,11 @@
       const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
 
       const container = document.getElementById(containerId);
-      container.innerHTML = `<strong>${columnName}</strong>`; // Ensure it resets on re-call
+      container.innerHTML = ""; // Clear only checkboxes
+
+      const title = document.createElement("strong");
+      title.textContent = columnName;
+      container.appendChild(title);
 
       uniqueValues.forEach(value => {
         const checkbox = document.createElement("input");
@@ -146,7 +151,7 @@
 
     buildCheckboxes("FP Exam Date", "fpExamDateFilter");
     buildCheckboxes("Status", "statusFilter");
-    buildCheckboxes("Location", "locationFilter"); // 🔹 Added Location filter
+    buildCheckboxes("Location", "locationFilter");
   }
 
   function applyCombinedFilters() {
@@ -167,7 +172,6 @@
       });
 
       const searchPass = row.some(cell => cell.toLowerCase().includes(searchText));
-
       return checkboxPass && searchPass;
     });
 
