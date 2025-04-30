@@ -79,6 +79,9 @@
     <div id="statusFilter">
       <strong>Status</strong>
     </div>
+    <div id="locationFilter">
+      <strong>Location</strong>
+    </div>
   </div>
 
   <!-- Table -->
@@ -108,7 +111,7 @@
       document.getElementById("tableHeader").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
 
       buildFilters(allData);
-      applyCombinedFilters(); // show all at start
+      applyCombinedFilters();
 
       document.getElementById("searchBox").addEventListener("input", applyCombinedFilters);
 
@@ -123,6 +126,8 @@
       const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
 
       const container = document.getElementById(containerId);
+      container.innerHTML = `<strong>${columnName}</strong>`; // Ensure it resets on re-call
+
       uniqueValues.forEach(value => {
         const checkbox = document.createElement("input");
         checkbox.type = "checkbox";
@@ -141,6 +146,7 @@
 
     buildCheckboxes("FP Exam Date", "fpExamDateFilter");
     buildCheckboxes("Status", "statusFilter");
+    buildCheckboxes("Location", "locationFilter"); // 🔹 Added Location filter
   }
 
   function applyCombinedFilters() {
@@ -155,13 +161,11 @@
     });
 
     const filteredData = allData.filter(row => {
-      // Apply checkbox filters
       const checkboxPass = Object.entries(activeFilters).every(([field, values]) => {
         const colIndex = headers.indexOf(field);
         return values.has(row[colIndex]);
       });
 
-      // Apply search filter
       const searchPass = row.some(cell => cell.toLowerCase().includes(searchText));
 
       return checkboxPass && searchPass;
