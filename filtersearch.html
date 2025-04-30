@@ -25,6 +25,8 @@
 
     .container {
       display: flex;
+      flex-wrap: wrap;
+      max-width: 100%;
     }
 
     #filters {
@@ -32,6 +34,7 @@
       padding: 20px;
       border-right: 1px solid #ccc;
       background-color: #f7f7f7;
+      box-sizing: border-box;
     }
 
     #filters h3 {
@@ -52,6 +55,7 @@
       width: 100%;
       border-collapse: collapse;
       margin: 20px;
+      min-width: 600px;
     }
 
     th, td {
@@ -62,6 +66,11 @@
 
     tr.hide {
       display: none;
+    }
+
+    .table-container {
+      flex: 1;
+      overflow-x: auto;
     }
   </style>
 </head>
@@ -74,19 +83,22 @@
   <!-- Sidebar Filters -->
   <div id="filters">
     <h3>Filter</h3>
-    <div id="fpExamDateFilter">
+    <div id="fpExamDateFilterContainer">
       <strong>FP Exam Date</strong>
+      <div id="fpExamDateFilter"></div>
     </div>
-    <div id="statusFilter">
+    <div id="statusFilterContainer">
       <strong>Status</strong>
+      <div id="statusFilter"></div>
     </div>
-    <div id="locationFilter">
+    <div id="locationFilterContainer">
       <strong>Location</strong>
+      <div id="locationFilter"></div>
     </div>
   </div>
 
   <!-- Table -->
-  <div style="flex: 1;">
+  <div class="table-container">
     <table id="placementTable">
       <thead id="tableHeader"></thead>
       <tbody id="tableBody"></tbody>
@@ -127,11 +139,7 @@
       const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
 
       const container = document.getElementById(containerId);
-      container.innerHTML = ""; // Clear only checkboxes
-
-      const title = document.createElement("strong");
-      title.textContent = columnName;
-      container.appendChild(title);
+      container.innerHTML = ""; // Only clear checkboxes
 
       uniqueValues.forEach(value => {
         const checkbox = document.createElement("input");
