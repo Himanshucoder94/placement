@@ -66,20 +66,13 @@
     thead tr {
       background-color: #004488;
       color: white;
+      cursor: pointer;
     }
 
     th, td {
       border: 1px solid #999;
       padding: 10px;
       text-align: left;
-    }
-
-    tr.pending {
-      background-color: #ffe5e5;
-    }
-
-    tr.confirmed {
-      background-color: #e6ffed;
     }
 
     tr.hide {
@@ -122,6 +115,7 @@
 <script>
   let allData = [];
   let headers = [];
+  let currentSort = { column: null, asc: true };
 
   async function fetchSheetData() {
     const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRUUiqW6VHWtf2LOOROvLBLSviu7pJN7WlOdJW4fHaVeOaKIB5lf6-8B-LIrgB38guDLqhDACR3qDM-/pub?gid=128930038&single=true&output=csv`;
@@ -134,9 +128,7 @@
       headers = rows[0];
       allData = rows.slice(1);
 
-      document.getElementById("tableHeader").innerHTML =
-        "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
-
+      renderTableHeader();
       buildFilters(allData);
       applyCombinedFilters();
 
@@ -146,13 +138,42 @@
     }
   }
 
+  function renderTableHeader() {
+    const headerRow = headers.map((h, index) =>
+      `<th data-index="${index}">${h} &#x21C5;</th>`
+    ).join("");
+    document.getElementById("tableHeader").innerHTML = `<tr>${headerRow}</tr>`;
+
+    document.querySelectorAll("#tableHeader th").forEach(th =>
+      th.addEventListener("click", () => {
+        const index = parseInt(th.dataset.index);
+        sortTable(index);
+      })
+    );
+  }
+
+  function sortTable(colIndex) {
+    const asc = currentSort.column === colIndex ? !currentSort.asc : true;
+    currentSort = { column: colIndex, asc };
+
+    allData.sort((a, b) => {
+      const valA = a[colIndex].toLowerCase();
+      const valB = b[colIndex].toLowerCase();
+      if (valA < valB) return asc ? -1 : 1;
+      if (valA > valB) return asc ? 1 : -1;
+      return 0;
+    });
+
+    applyCombinedFilters();
+  }
+
   function buildFilters(data) {
     const buildCheckboxes = (columnName, containerId) => {
       const colIndex = headers.indexOf(columnName);
       const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
 
       const container = document.getElementById(containerId);
-      container.innerHTML = ""; // Clear checkboxes
+      container.innerHTML = ""; // Clear
 
       uniqueValues.forEach(value => {
         const checkbox = document.createElement("input");
@@ -201,14 +222,9 @@
 
   function renderTable(data) {
     const tableBody = document.getElementById("tableBody");
-    const statusColIndex = headers.indexOf("STATUS");
-
-    tableBody.innerHTML = data.map(row => {
-      const status = row[statusColIndex]?.toLowerCase();
-      const rowClass = status === "pending" ? "pending" : "confirmed";
-
-      return `<tr class="${rowClass}">${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
-    }).join("");
+    tableBody.innerHTML = data.map(row =>
+      `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`
+    ).join("");
   }
 
   fetchSheetData();
