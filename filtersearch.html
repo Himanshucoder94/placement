@@ -51,11 +51,21 @@
       font-size: 14px;
     }
 
+    .table-container {
+      flex: 1;
+      overflow-x: auto;
+    }
+
     table {
       width: 100%;
       border-collapse: collapse;
       margin: 20px;
       min-width: 600px;
+    }
+
+    thead tr {
+      background-color: #004488;
+      color: white;
     }
 
     th, td {
@@ -64,19 +74,16 @@
       text-align: left;
     }
 
-    th {
-      cursor: pointer;
+    tr.pending {
+      background-color: #ffe5e5;
     }
 
-    .table-container {
-      flex: 1;
-      overflow-x: auto;
+    tr.confirmed {
+      background-color: #e6ffed;
     }
 
-    .sort-arrow {
-      font-size: 12px;
-      margin-left: 5px;
-      color: #666;
+    tr.hide {
+      display: none;
     }
   </style>
 </head>
@@ -115,7 +122,6 @@
 <script>
   let allData = [];
   let headers = [];
-  let sortDirection = {}; // Track sort order
 
   async function fetchSheetData() {
     const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRUUiqW6VHWtf2LOOROvLBLSviu7pJN7WlOdJW4fHaVeOaKIB5lf6-8B-LIrgB38guDLqhDACR3qDM-/pub?gid=128930038&single=true&output=csv`;
@@ -128,7 +134,9 @@
       headers = rows[0];
       allData = rows.slice(1);
 
-      renderTableHeader();
+      document.getElementById("tableHeader").innerHTML =
+        "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+
       buildFilters(allData);
       applyCombinedFilters();
 
@@ -138,19 +146,13 @@
     }
   }
 
-  function renderTableHeader() {
-    const tableHeader = document.getElementById("tableHeader");
-    tableHeader.innerHTML = "<tr>" + headers.map((h, i) => {
-      return `<th data-index="${i}" onclick="sortByColumn(${i})">${h}<span class="sort-arrow" id="arrow-${i}"></span></th>`;
-    }).join("") + "</tr>";
-  }
-
   function buildFilters(data) {
     const buildCheckboxes = (columnName, containerId) => {
       const colIndex = headers.indexOf(columnName);
       const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
+
       const container = document.getElementById(containerId);
-      container.innerHTML = "";
+      container.innerHTML = ""; // Clear checkboxes
 
       uniqueValues.forEach(value => {
         const checkbox = document.createElement("input");
@@ -199,40 +201,14 @@
 
   function renderTable(data) {
     const tableBody = document.getElementById("tableBody");
-    tableBody.innerHTML = data.map(row =>
-      `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`
-    ).join("");
-  }
+    const statusColIndex = headers.indexOf("STATUS");
 
-  function sortByColumn(index) {
-    const headerName = headers[index];
-    sortDirection[headerName] = !sortDirection[headerName]; // Toggle direction
+    tableBody.innerHTML = data.map(row => {
+      const status = row[statusColIndex]?.toLowerCase();
+      const rowClass = status === "pending" ? "pending" : "confirmed";
 
-    allData.sort((a, b) => {
-      const valA = a[index].toLowerCase();
-      const valB = b[index].toLowerCase();
-
-      // Detect date format
-      if (!isNaN(Date.parse(valA)) && !isNaN(Date.parse(valB))) {
-        return sortDirection[headerName]
-          ? new Date(valA) - new Date(valB)
-          : new Date(valB) - new Date(valA);
-      } else if (!isNaN(valA) && !isNaN(valB)) {
-        return sortDirection[headerName]
-          ? Number(valA) - Number(valB)
-          : Number(valB) - Number(valA);
-      } else {
-        return sortDirection[headerName]
-          ? valA.localeCompare(valB)
-          : valB.localeCompare(valA);
-      }
-    });
-
-    // Clear all arrows
-    document.querySelectorAll(".sort-arrow").forEach(el => el.innerHTML = "");
-    document.getElementById(`arrow-${index}`).innerHTML = sortDirection[headerName] ? "↑" : "↓";
-
-    applyCombinedFilters();
+      return `<tr class="${rowClass}">${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`;
+    }).join("");
   }
 
   fetchSheetData();
