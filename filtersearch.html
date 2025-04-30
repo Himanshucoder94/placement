@@ -64,13 +64,19 @@
       text-align: left;
     }
 
-    tr.hide {
-      display: none;
+    th {
+      cursor: pointer;
     }
 
     .table-container {
       flex: 1;
       overflow-x: auto;
+    }
+
+    .sort-arrow {
+      font-size: 12px;
+      margin-left: 5px;
+      color: #666;
     }
   </style>
 </head>
@@ -109,6 +115,7 @@
 <script>
   let allData = [];
   let headers = [];
+  let sortDirection = {}; // Track sort order
 
   async function fetchSheetData() {
     const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vRUUiqW6VHWtf2LOOROvLBLSviu7pJN7WlOdJW4fHaVeOaKIB5lf6-8B-LIrgB38guDLqhDACR3qDM-/pub?gid=128930038&single=true&output=csv`;
@@ -121,9 +128,7 @@
       headers = rows[0];
       allData = rows.slice(1);
 
-      document.getElementById("tableHeader").innerHTML =
-        "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
-
+      renderTableHeader();
       buildFilters(allData);
       applyCombinedFilters();
 
@@ -133,13 +138,19 @@
     }
   }
 
+  function renderTableHeader() {
+    const tableHeader = document.getElementById("tableHeader");
+    tableHeader.innerHTML = "<tr>" + headers.map((h, i) => {
+      return `<th data-index="${i}" onclick="sortByColumn(${i})">${h}<span class="sort-arrow" id="arrow-${i}"></span></th>`;
+    }).join("") + "</tr>";
+  }
+
   function buildFilters(data) {
     const buildCheckboxes = (columnName, containerId) => {
       const colIndex = headers.indexOf(columnName);
       const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
-
       const container = document.getElementById(containerId);
-      container.innerHTML = ""; // Only clear checkboxes
+      container.innerHTML = "";
 
       uniqueValues.forEach(value => {
         const checkbox = document.createElement("input");
@@ -191,6 +202,37 @@
     tableBody.innerHTML = data.map(row =>
       `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`
     ).join("");
+  }
+
+  function sortByColumn(index) {
+    const headerName = headers[index];
+    sortDirection[headerName] = !sortDirection[headerName]; // Toggle direction
+
+    allData.sort((a, b) => {
+      const valA = a[index].toLowerCase();
+      const valB = b[index].toLowerCase();
+
+      // Detect date format
+      if (!isNaN(Date.parse(valA)) && !isNaN(Date.parse(valB))) {
+        return sortDirection[headerName]
+          ? new Date(valA) - new Date(valB)
+          : new Date(valB) - new Date(valA);
+      } else if (!isNaN(valA) && !isNaN(valB)) {
+        return sortDirection[headerName]
+          ? Number(valA) - Number(valB)
+          : Number(valB) - Number(valA);
+      } else {
+        return sortDirection[headerName]
+          ? valA.localeCompare(valB)
+          : valB.localeCompare(valA);
+      }
+    });
+
+    // Clear all arrows
+    document.querySelectorAll(".sort-arrow").forEach(el => el.innerHTML = "");
+    document.getElementById(`arrow-${index}`).innerHTML = sortDirection[headerName] ? "↑" : "↓";
+
+    applyCombinedFilters();
   }
 
   fetchSheetData();
