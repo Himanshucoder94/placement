@@ -1,1 +1,162 @@
 
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Maninagar - Placement Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: #fdfdfd;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .container {
+      display: flex;
+    }
+
+    #filters {
+      width: 250px;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+      background-color: #f7f7f7;
+    }
+
+    #filters h3 {
+      margin-top: 0;
+    }
+
+    #filters div {
+      margin-bottom: 20px;
+    }
+
+    #filters label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px;
+    }
+
+    th, td {
+      border: 1px solid #ccc;
+      padding: 10px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #eee;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Maninagar - Placement Data</h1>
+
+  <div class="container">
+    <!-- Sidebar Filters -->
+    <div id="filters">
+      <h3>Filter</h3>
+      <div id="fpExamDateFilter">
+        <strong>FP Exam Date</strong>
+      </div>
+      <div id="statusFilter">
+        <strong>Status</strong>
+      </div>
+    </div>
+
+    <!-- Table -->
+    <div style="flex: 1;">
+      <table id="placementTable">
+        <thead id="tableHeader"></thead>
+        <tbody id="tableBody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <script>
+    async function fetchSheetData() {
+      const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSlyPy66Hfn4xkjwJg8cen4aNbeMTyY1C7Qi469Z88coacH7hQAdjJjzoFwxSmDEsWo6jkB4pEWj8J8/pub?gid=1328928505&single=true&output=csv`;
+
+      try {
+        const response = await fetch(url);
+        const text = await response.text();
+        const rows = text.trim().split("\n").map(row => row.split(","));
+
+        const headers = rows[0];
+        const dataRows = rows.slice(1);
+
+        document.getElementById("tableHeader").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+
+        window.originalData = dataRows;
+        window.headers = headers;
+
+        buildFilters(dataRows, headers);
+        renderTable(dataRows);
+      } catch (err) {
+        console.error("Error fetching data", err);
+      }
+    }
+
+    function buildFilters(dataRows, headers) {
+      const fpExamIndex = headers.indexOf("FP Exam Date");
+      const statusIndex = headers.indexOf("Status");
+
+      const fpExamValues = [...new Set(dataRows.map(r => r[fpExamIndex]).filter(Boolean))];
+      const statusValues = [...new Set(dataRows.map(r => r[statusIndex]).filter(Boolean))];
+
+      const buildCheckboxes = (values, filterId, fieldName) => {
+        const container = document.getElementById(filterId);
+        container.innerHTML += values.map(val =>
+          `<label><input type="checkbox" class="filter-checkbox" data-field="${fieldName}" value="${val}"> ${val}</label>`
+        ).join("");
+      };
+
+      buildCheckboxes(fpExamValues, "fpExamDateFilter", "FP Exam Date");
+      buildCheckboxes(statusValues, "statusFilter", "Status");
+
+      document.querySelectorAll(".filter-checkbox").forEach(cb => {
+        cb.addEventListener("change", applyFilters);
+      });
+    }
+
+    function applyFilters() {
+      const activeFilters = {};
+
+      document.querySelectorAll(".filter-checkbox:checked").forEach(cb => {
+        const field = cb.dataset.field;
+        const value = cb.value;
+        if (!activeFilters[field]) activeFilters[field] = new Set();
+        activeFilters[field].add(value);
+      });
+
+      const filtered = window.originalData.filter(row => {
+        return Object.entries(activeFilters).every(([field, values]) => {
+          const index = window.headers.indexOf(field);
+          return values.has(row[index]);
+        });
+      });
+
+      renderTable(filtered);
+    }
+
+    function renderTable(rows) {
+      document.getElementById("tableBody").innerHTML = rows
+        .map(row => `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`)
+        .join("");
+    }
+
+    fetchSheetData();
+  </script>
+
+</body>
+</html>
