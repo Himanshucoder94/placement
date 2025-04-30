@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Maninagar - Placement Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      padding: 40px;
+      background-color: #fdfdfd;
+    }
+
+    h1 {
+      text-align: center;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-top: 20px;
+    }
+
+    th, td {
+      border: 1px solid #999;
+      padding: 10px;
+      text-align: left;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Maninagar - Placement Data</h1>
+<table id="placementTable"></table>
+
+<script>
+  async function fetchSheetData(gid, elementId) {
+    const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSlyPy66Hfn4xkjwJg8cen4aNbeMTyY1C7Qi469Z88coacH7hQAdjJjzoFwxSmDEsWo6jkB4pEWj8J8/pub?gid=${gid}&single=true&output=csv`;
+
+    try {
+      const response = await fetch(url);
+      const text = await response.text();
+      const rows = text.trim().split("\n").map(row => row.split(","));
+
+      let html = "";
+      rows.forEach((row, i) => {
+        html += "<tr>";
+        row.forEach(cell => {
+          html += i === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`;
+        });
+        html += "</tr>";
+      });
+
+      document.getElementById(elementId).innerHTML = html;
+    } catch (err) {
+      console.error(`Failed to fetch data for ${elementId}`, err);
+    }
+  }
+
+  // Call the function to load data
+  fetchSheetData("1522592827", "placementTable");
+</script>
+
+</body>
+</html>
