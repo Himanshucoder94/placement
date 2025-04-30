@@ -1,0 +1,184 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Bapunagar - Placement Data</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      background-color: #fdfdfd;
+    }
+
+    h1 {
+      text-align: center;
+      padding: 20px;
+    }
+
+    #searchBox {
+      margin: 10px auto;
+      display: block;
+      padding: 10px;
+      width: 50%;
+      font-size: 16px;
+    }
+
+    .container {
+      display: flex;
+    }
+
+    #filters {
+      width: 250px;
+      padding: 20px;
+      border-right: 1px solid #ccc;
+      background-color: #f7f7f7;
+    }
+
+    #filters h3 {
+      margin-top: 0;
+    }
+
+    #filters div {
+      margin-bottom: 20px;
+    }
+
+    #filters label {
+      display: block;
+      margin-bottom: 5px;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px;
+    }
+
+    th, td {
+      border: 1px solid #999;
+      padding: 10px;
+      text-align: left;
+    }
+
+    tr.hide {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+
+<h1>Bapunagar - Placement Data</h1>
+<input type="text" id="searchBox" placeholder="Search by any field...">
+
+<div class="container">
+  <!-- Sidebar Filters -->
+  <div id="filters">
+    <h3>Filter</h3>
+    <div id="fpExamDateFilter">
+      <strong>FP Exam Date</strong>
+    </div>
+    <div id="statusFilter">
+      <strong>Status</strong>
+    </div>
+  </div>
+
+  <!-- Table -->
+  <div style="flex: 1;">
+    <table id="placementTable">
+      <thead id="tableHeader"></thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </div>
+</div>
+
+<script>
+  let allData = [];
+  let headers = [];
+
+  async function fetchSheetData() {
+    const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSlyPy66Hfn4xkjwJg8cen4aNbeMTyY1C7Qi469Z88coacH7hQAdjJjzoFwxSmDEsWo6jkB4pEWj8J8/pub?gid=1328928505&single=true&output=csv`;
+
+    try {
+      const response = await fetch(url);
+      const text = await response.text();
+      const rows = text.trim().split("\n").map(row => row.split(","));
+
+      headers = rows[0];
+      allData = rows.slice(1);
+
+      document.getElementById("tableHeader").innerHTML = "<tr>" + headers.map(h => `<th>${h}</th>`).join("") + "</tr>";
+
+      buildFilters(allData);
+      applyCombinedFilters(); // show all at start
+
+      document.getElementById("searchBox").addEventListener("input", applyCombinedFilters);
+
+    } catch (err) {
+      console.error("Error fetching data", err);
+    }
+  }
+
+  function buildFilters(data) {
+    const buildCheckboxes = (columnName, containerId) => {
+      const colIndex = headers.indexOf(columnName);
+      const uniqueValues = [...new Set(data.map(row => row[colIndex]).filter(Boolean))];
+
+      const container = document.getElementById(containerId);
+      uniqueValues.forEach(value => {
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.className = "filter-checkbox";
+        checkbox.dataset.field = columnName;
+        checkbox.value = value;
+
+        checkbox.addEventListener("change", applyCombinedFilters);
+
+        const label = document.createElement("label");
+        label.appendChild(checkbox);
+        label.append(" " + value);
+        container.appendChild(label);
+      });
+    };
+
+    buildCheckboxes("FP Exam Date", "fpExamDateFilter");
+    buildCheckboxes("Status", "statusFilter");
+  }
+
+  function applyCombinedFilters() {
+    const searchText = document.getElementById("searchBox").value.toLowerCase();
+
+    const activeFilters = {};
+    document.querySelectorAll(".filter-checkbox:checked").forEach(cb => {
+      const field = cb.dataset.field;
+      const value = cb.value;
+      if (!activeFilters[field]) activeFilters[field] = new Set();
+      activeFilters[field].add(value);
+    });
+
+    const filteredData = allData.filter(row => {
+      // Apply checkbox filters
+      const checkboxPass = Object.entries(activeFilters).every(([field, values]) => {
+        const colIndex = headers.indexOf(field);
+        return values.has(row[colIndex]);
+      });
+
+      // Apply search filter
+      const searchPass = row.some(cell => cell.toLowerCase().includes(searchText));
+
+      return checkboxPass && searchPass;
+    });
+
+    renderTable(filteredData);
+  }
+
+  function renderTable(data) {
+    const tableBody = document.getElementById("tableBody");
+    tableBody.innerHTML = data.map(row =>
+      `<tr>${row.map(cell => `<td>${cell}</td>`).join("")}</tr>`
+    ).join("");
+  }
+
+  fetchSheetData();
+</script>
+
+</body>
+</html>
