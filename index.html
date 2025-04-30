@@ -2,99 +2,59 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8">
-  <title>Bapunagar - Placement Data</title>
+  <title>Placement Dashboard</title>
   <style>
     body {
       font-family: Arial, sans-serif;
-      padding: 40px;
       background-color: #fdfdfd;
-    }
-
-    h1 {
+      margin: 0;
+      padding: 40px;
       text-align: center;
     }
 
-    #searchBox {
-      margin: 20px auto;
-      display: block;
-      padding: 10px;
-      width: 50%;
-      font-size: 16px;
+    h1 {
+      margin-bottom: 40px;
     }
 
-    table {
-      width: 100%;
-      border-collapse: collapse;
-      margin-top: 10px;
+    .location-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 30px;
     }
 
-    th, td {
-      border: 1px solid #999;
-      padding: 10px;
-      text-align: left;
+    .location-card {
+      width: 200px;
+      height: 100px;
+      background-color: #e8e8e8;
+      border-radius: 8px;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      font-size: 18px;
+      font-weight: bold;
+      text-decoration: none;
+      color: #333;
+      transition: all 0.2s ease-in-out;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
     }
 
-    tr.hide {
-      display: none;
+    .location-card:hover {
+      background-color: #d0d0d0;
+      transform: scale(1.05);
     }
   </style>
 </head>
 <body>
 
-<h1>Bapunagar - Placement Data</h1>
-<input type="text" id="searchBox" placeholder="Search by any field...">
-<table id="placementTable"></table>
+<h1>Placement Center - Select Location</h1>
 
-<script>
-  async function fetchSheetData(gid, elementId) {
-    const url = `https://docs.google.com/spreadsheets/d/e/2PACX-1vSlyPy66Hfn4xkjwJg8cen4aNbeMTyY1C7Qi469Z88coacH7hQAdjJjzoFwxSmDEsWo6jkB4pEWj8J8/pub?gid=1328928505&single=true&output=csv`;
-
-    try {
-      const response = await fetch(url);
-      const text = await response.text();
-      const rows = text.trim().split("\n").map(row => row.split(","));
-
-      let html = "";
-      rows.forEach((row, i) => {
-        html += "<tr>";
-        row.forEach(cell => {
-          html += i === 0 ? `<th>${cell}</th>` : `<td>${cell}</td>`;
-        });
-        html += "</tr>";
-      });
-
-      document.getElementById(elementId).innerHTML = html;
-
-      // Enable filtering
-      enableTableFilter("searchBox", elementId);
-
-    } catch (err) {
-      console.error(`Failed to fetch data for ${elementId}`, err);
-    }
-  }
-
-  function enableTableFilter(inputId, tableId) {
-    const input = document.getElementById(inputId);
-    const table = document.getElementById(tableId);
-
-    input.addEventListener("input", function () {
-      const filter = input.value.toLowerCase();
-      const rows = table.querySelectorAll("tr");
-
-      rows.forEach((row, index) => {
-        if (index === 0) return; // skip header
-        const cells = row.querySelectorAll("td");
-        const match = [...cells].some(cell =>
-          cell.textContent.toLowerCase().includes(filter)
-        );
-        row.classList.toggle("hide", !match);
-      });
-    });
-  }
-
-  // Fetch and render data
-  fetchSheetData("1328928505", "placementTable");
-</script>
+<div class="location-grid">
+  <a class="location-card" href="https://himanshucoder94.github.io/placement/filtersearch.html">Bapunagar</a>
+  <a class="location-card" href="https://himanshucoder94.github.io/placement/paldi.html">Paldi</a>
+  <a class="location-card" href="https://himanshucoder94.github.io/placement/chandkheda.html">Chandkheda</a>
+  <a class="location-card" href="https://himanshucoder94.github.io/placement/maninagar.html">Maninagar</a>
+</div>
 
 </body>
 </html>
